@@ -84,7 +84,7 @@ if not st.session_state.categoria:
         st.session_state.step = 0
         st.session_state.answers = []
         st.session_state.finished = False
-        st.experimental_rerun()  # forza refresh per mostrare subito la prima domanda
+        st.rerun()  # forza refresh per mostrare subito la prima domanda
 
 # Se categoria scelta, avvia wizard
 else:
@@ -105,7 +105,7 @@ else:
                 st.session_state.finished = True
             else:
                 st.session_state.step += 1
-                st.experimental_rerun()
+                st.rerun()
 
     elif not st.session_state.finished and st.session_state.step == len(domande):
         # Tutte le domande completate
@@ -121,4 +121,4 @@ else:
             st.session_state.step = 0
             st.session_state.answers = []
             st.session_state.finished = False
-            st.experimental_rerun()
+            st.rerun()
