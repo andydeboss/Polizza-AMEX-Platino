@@ -1,135 +1,152 @@
 import streamlit as st
 
-# Database delle coperture Platino con sinonimi/keywords e checklist di domande in linguaggio naturale
-database = [
+st.title("🤖 Assistente Coperture Amex Platino")
+st.write("Scrivi liberamente la tua domanda o cosa ti è successo. L'assistente verificherà se sei coperto, ponendoti domande di chiarimento oppure rispondendo ai tuoi dubbi.")
+
+# Definizione coperture con logica eventi + dubbi
+coverages = [
     {
-        "sinistro": "Spese mediche in viaggio",
-        "keywords": [
-            "malore", "mi sento male", "sto male", "ospedale", "ambulanza",
-            "infortunio", "mi sono fatto male", "mi sono rotto", "pronto soccorso",
-            "malattia", "sono ammalato", "ricovero", "incidentato"
+        "nome": "Spese mediche in viaggio",
+        "keywords_evento": [
+            "mi sento male", "malore", "malattia", "ospedale", "ambulanza",
+            "infortunio", "mi sono fatto male", "mi sono rotto", "ricovero",
+            "pronto soccorso"
+        ],
+        "keywords_dubbio": [
+            "sono coperto se mi ammalo", "vale se sto male",
+            "sono coperto per spese mediche", "copre ospedale", "cure all'estero"
         ],
         "domande": [
-            "Il viaggio prevedeva almeno un volo o una notte in hotel prenotata?",
+            "Il viaggio prevedeva almeno un volo o una notte in hotel prepagata?",
             "Hai pagato il viaggio con la Carta Platino?",
-            "L'evento (malattia o infortunio) è avvenuto durante il viaggio e non prima della partenza?",
-            "Si tratta di un evento improvviso e non di una condizione cronica già nota?",
-            "Hai referti o documentazione medica che confermino l'accaduto?"
+            "L'evento è avvenuto durante il viaggio e non prima della partenza?",
+            "Non si tratta di una malattia cronica già nota?",
+            "Hai referti o documentazione medica?"
         ],
-        "dettagli": "✅ Coperto fino a €5.000.000 per persona; cure dentistiche urgenti fino a €1.500."
+        "risposta_dubbio": "✅ Le spese mediche sono coperte fino a €5.000.000 per persona, ma solo se il viaggio include un volo o una notte di hotel prepagata e se hai pagato con la Carta Platino. Sono escluse malattie croniche già note."
     },
     {
-        "sinistro": "Effetti personali, denaro e documenti in viaggio",
-        "keywords": [
-            "furto", "rubato", "scippo", "valigia", "bagaglio", "documenti",
-            "portafoglio", "passaporto", "soldi", "bancomat", "borsa", "smarrito",
-            "bagaglio perso", "bagaglio non arrivato", "valigia danneggiata"
+        "nome": "Annullamento o interruzione viaggio",
+        "keywords_evento": [
+            "ho annullato il viaggio", "ho cancellato la vacanza", "non sono partito",
+            "viaggio saltato", "interruzione viaggio", "rientrato prima"
+        ],
+        "keywords_dubbio": [
+            "sono coperto se annullo", "vale se devo annullare",
+            "posso annullare", "copre se rientro prima"
+        ],
+        "domande": [
+            "Hai pagato il viaggio con la Carta Platino?",
+            "La causa dell’annullamento rientra tra quelle previste (malattia, lutto, infortunio, danni alla casa)?",
+            "Hai documentazione a supporto (es. certificato medico)?",
+            "Hai rispettato i tempi massimi di comunicazione?",
+            "Le spese che chiedi erano non rimborsabili da altri fornitori?"
+        ],
+        "risposta_dubbio": "✅ L'annullamento è coperto fino a €10.000 per beneficiario, ma solo se il viaggio è stato pagato con Carta Platino e la causa rientra tra quelle previste (malattia, lutto, infortunio, danni alla casa)."
+    },
+    {
+        "nome": "Effetti personali, denaro e documenti",
+        "keywords_evento": [
+            "furto bagagli", "rubato portafoglio", "scippo", "valigia sparita",
+            "smarrito passaporto", "bagaglio non arrivato", "bagaglio perso"
+        ],
+        "keywords_dubbio": [
+            "sono coperto se mi rubano", "vale per il furto", "copre documenti",
+            "copre soldi", "copre valigia"
         ],
         "domande": [
             "Il furto o la perdita è avvenuto durante il viaggio?",
             "Hai fatto denuncia alla polizia o al vettore?",
-            "Gli oggetti erano custoditi in modo adeguato (non lasciati incustoditi)?",
-            "Il valore rientra nei limiti di polizza (3.000 € totali, max 750 € per articolo/documenti/denaro)?",
-            "Hai prove di possesso o acquisto degli oggetti (scontrini, foto, ricevute)?"
+            "Gli oggetti erano custoditi in modo adeguato?",
+            "Il valore rientra nei limiti (3.000 € totali, 750 € max per articolo/documenti/denaro)?",
+            "Hai prove di possesso o acquisto (scontrini, foto)?"
         ],
-        "dettagli": "✅ Coperto fino a €3.000 totali; max €750 per articolo; max €750 per denaro/documenti."
+        "risposta_dubbio": "✅ Coperti furti o smarrimenti fino a €3.000 totali, con limite di €750 per articolo/documenti/denaro. Serve denuncia alle autorità e prova di possesso."
     },
     {
-        "sinistro": "Noleggio auto – danni o furto",
-        "keywords": [
-            "noleggio auto", "auto a noleggio", "macchina affittata",
-            "ho graffiato l'auto", "graffiato la macchina", "danni auto",
-            "furto auto", "rubato auto", "incidentato auto a noleggio",
-            "danni alla macchina presa in vacanza"
+        "nome": "Noleggio auto",
+        "keywords_evento": [
+            "ho graffiato l'auto a noleggio", "danni auto a noleggio",
+            "furto auto a noleggio", "incidentato macchina presa in vacanza"
+        ],
+        "keywords_dubbio": [
+            "sono coperto se noleggio un'auto", "vale per auto a noleggio",
+            "copre il noleggio auto", "copre danni auto affittata"
         ],
         "domande": [
-            "Era un’auto a noleggio (non di tua proprietà)?",
+            "Era un’auto a noleggio (non tua)?",
             "Il contratto era valido e intestato a te?",
             "Hai pagato il noleggio con la Carta Platino?",
-            "Il sinistro è avvenuto durante il periodo di noleggio dichiarato?",
-            "Stavi guidando nel rispetto delle regole (no ebbrezza, no uso improprio)?",
+            "Il sinistro è avvenuto durante il periodo di noleggio?",
+            "Stavi guidando nel rispetto delle regole (no ebbrezza)?",
             "Hai denuncia o verbale del noleggiatore/autorità?"
         ],
-        "dettagli": "✅ Coperto fino a €75.000 per evento."
+        "risposta_dubbio": "✅ Coperti danni o furto fino a €75.000, ma solo per auto a noleggio legate a un viaggio con almeno un volo o una notte di hotel. Non copre noleggi usati 'sotto casa'."
     },
     {
-        "sinistro": "Ritardo viaggio o mancata partenza",
-        "keywords": [
-            "ritardo volo", "volo cancellato", "aereo in ritardo", "mancata partenza",
-            "ho perso la coincidenza", "treno in ritardo", "traghetto non partito",
-            "partenza annullata", "hanno cancellato la mia partenza"
+        "nome": "Ritardo viaggio o mancata partenza",
+        "keywords_evento": [
+            "volo cancellato", "aereo in ritardo", "ritardo volo",
+            "ho perso la coincidenza", "partenza annullata"
+        ],
+        "keywords_dubbio": [
+            "sono coperto se il volo è in ritardo", "vale per ritardi",
+            "copre se cancellano il volo"
         ],
         "domande": [
             "Il viaggio era stato pagato con la Carta Platino?",
-            "Il ritardo o la cancellazione è stato superiore alla soglia prevista (es. 4 ore)?",
-            "Hai ricevuto conferma scritta del ritardo/cancellazione dalla compagnia?",
-            "Hai sostenuto spese extra (pasti, hotel, trasferimenti) e le hai documentate?",
-            "La causa del ritardo rientra tra quelle ammesse (non dolo, non sciopero selvaggio)?"
+            "Il ritardo o la cancellazione ha superato la soglia prevista (es. 4 ore)?",
+            "Hai ricevuto conferma scritta del ritardo/cancellazione?",
+            "Hai sostenuto spese extra e conservato ricevute?",
+            "La causa rientra tra quelle ammesse (non dolo, non sciopero selvaggio)?"
         ],
-        "dettagli": "✅ Indennizzo per spese extra (pasti, pernottamenti) entro i limiti previsti."
+        "risposta_dubbio": "✅ Coperti ritardi o cancellazioni con rimborso spese extra (pasti, hotel, trasferimenti) se superiori a 4 ore e se documentati."
     },
     {
-        "sinistro": "Annullamento o interruzione viaggio",
-        "keywords": [
-            "annullamento", "cancellato viaggio", "non sono partito",
-            "viaggio saltato", "interruzione viaggio", "rientrato prima",
-            "ho dovuto annullare", "ho cancellato la vacanza", "non sono potuto partire"
-        ],
-        "domande": [
-            "Hai pagato il viaggio con la Carta Platino?",
-            "La causa dell’annullamento è tra quelle previste (malattia, infortunio, lutto, danni alla casa)?",
-            "Hai certificato medico o altra documentazione che lo provi?",
-            "Hai rispettato i tempi massimi di comunicazione alla compagnia?",
-            "Le spese che chiedi erano non rimborsabili da altri fornitori?"
-        ],
-        "dettagli": "✅ Coperto fino a €10.000 per beneficiario per spese non rimborsabili."
-    },
-    {
-        "sinistro": "Incidenti di viaggio",
-        "keywords": [
+        "nome": "Incidenti di viaggio",
+        "keywords_evento": [
             "incidente in vacanza", "mi sono fatto male", "infortunio in viaggio",
-            "sono caduto", "invalidità in viaggio", "morte in viaggio",
-            "incidentato in taxi", "incidente durante escursione", "caduto in hotel"
+            "sono caduto", "invalidità in viaggio", "morte in viaggio"
+        ],
+        "keywords_dubbio": [
+            "sono coperto se ho un incidente", "copre invalidità", "copre morte",
+            "vale per infortuni in viaggio"
         ],
         "domande": [
-            "L’incidente è avvenuto durante un viaggio coperto (con volo o notte prepagata)?",
-            "Eri titolare della Carta Platino al momento dell’evento?",
-            "Non si tratta di un’attività esclusa (es. sport estremi non previsti)?",
+            "L’incidente è avvenuto durante un viaggio coperto (volo o notte prepagata)?",
+            "Eri titolare della Carta Platino?",
+            "Non si tratta di un’attività esclusa (es. sport estremi)?",
             "Hai referti medici o denuncia che provino l’incidente?",
             "L’evento è avvenuto entro i limiti temporali della polizza?"
         ],
-        "dettagli": "✅ Indennizzi per morte o invalidità permanente da infortunio in viaggio, secondo i limiti di polizza."
+        "risposta_dubbio": "✅ Previsti indennizzi per morte o invalidità permanente da infortunio in viaggio, entro i limiti di polizza e con esclusioni per attività rischiose."
     }
 ]
 
-st.title("🤖 Assistente Coperture Amex Platino")
-st.write("Scrivi in linguaggio naturale cosa ti è successo. Poi premi **Invia** per verificare se sei coperto. Ti farò alcune domande per controllare le condizioni della polizza.")
-
-query = st.text_area("Descrivi cosa è successo", height=100)
+query = st.text_area("✍️ Scrivi qui la tua domanda o descrivi cosa è successo", height=100)
 
 if st.button("Invia"):
-    if query:
-        match = None
-        for item in database:
-            if any(k in query.lower() for k in item["keywords"]):
-                match = item
-                break
+    risposta = None
 
-        if match:
-            st.subheader(f"Possibile copertura: {match['sinistro']}")
-
+    for cov in coverages:
+        if any(k in query.lower() for k in cov["keywords_dubbio"]):
+            risposta = cov["risposta_dubbio"]
+            st.info(f"ℹ️ {cov['nome']}: {risposta}")
+            break
+        elif any(k in query.lower() for k in cov["keywords_evento"]):
+            st.subheader(f"Possibile copertura: {cov['nome']}")
             answers = []
-            with st.form(key="checklist"):
-                for q in match["domande"]:
+            with st.form(key=f"form_{cov['nome']}"):
+                for q in cov["domande"]:
                     answers.append(st.radio(q, ["Sì", "No"], index=0))
                 submitted = st.form_submit_button("Verifica copertura")
 
             if submitted:
                 if all(a == "Sì" for a in answers):
-                    st.success("✅ Coperto")
-                    st.write(match["dettagli"])
+                    st.success(f"✅ {cov['dettagli']}")
                 else:
-                    st.error("❌ Non coperto")
-                    st.write("Una o più condizioni richieste dalla polizza non sono rispettate.")
-        else:
-            st.warning("Non ho trovato una copertura corrispondente. Prova a descrivere diversamente il sinistro.")
+                    st.error("❌ Non coperto: una o più condizioni non sono rispettate.")
+            break
+
+    if not risposta and not any(any(k in query.lower() for k in c["keywords_evento"]+c["keywords_dubbio"]) for c in coverages):
+        st.warning("Non ho trovato una copertura corrispondente. Prova a riformulare la domanda.")
