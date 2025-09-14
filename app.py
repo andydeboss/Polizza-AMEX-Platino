@@ -58,4 +58,67 @@ coverages = {
             ("Hai pagato il viaggio con la Carta Platino?", True),
             ("La causa rientra tra quelle previste (malattia, lutto, infortunio, danni alla casa)?", True),
             ("Hai documentazione a supporto (es. certificato medico)?", True),
-            ("Hai rispettato i tempi
+            ("Hai rispettato i tempi massimi di comunicazione?", True),
+            ("Le spese che chiedi erano non rimborsabili da altri fornitori?", False),
+        ],
+        "dettagli": "✅ Coperto fino a €10.000 per beneficiario per spese non rimborsabili."
+    },
+    "Incidenti di viaggio": {
+        "domande": [
+            ("L’incidente è avvenuto durante un viaggio coperto (volo o notte prepagata)?", True),
+            ("Eri titolare della Carta Platino al momento dell’evento?", True),
+            ("Non si tratta di un’attività esclusa (es. sport estremi)?", True),
+            ("Hai referti medici o denuncia che provino l’incidente?", True),
+            ("L’evento è avvenuto entro i limiti temporali della polizza?", False),
+        ],
+        "dettagli": "✅ Previsti indennizzi per morte o invalidità permanente da infortunio in viaggio, entro i limiti di polizza."
+    }
+}
+
+# Se non ha ancora scelto la categoria
+if not st.session_state.categoria:
+    st.header("Seleziona una tipologia di evento")
+    categoria = st.selectbox("Che tipo di situazione vuoi verificare?", ["---"] + list(coverages.keys()))
+    if categoria != "---":
+        st.session_state.categoria = categoria
+        st.session_state.step = 0
+        st.session_state.answers = []
+        st.session_state.finished = False
+        st.experimental_rerun()  # forza refresh per mostrare subito la prima domanda
+
+# Se categoria scelta, avvia wizard
+else:
+    categoria = st.session_state.categoria
+    domande = coverages[categoria]["domande"]
+
+    # Calcolo progress bar
+    progress = st.session_state.step / len(domande)
+    st.progress(progress)
+
+    if not st.session_state.finished and st.session_state.step < len(domande):
+        domanda, essenziale = domande[st.session_state.step]
+        risposta = st.radio(domanda, ["Sì", "No"], key=f"q{st.session_state.step}")
+        if st.button("Avanti", key=f"next{st.session_state.step}"):
+            st.session_state.answers.append(risposta)
+            if risposta == "No" and essenziale:
+                st.error("❌ Non coperto: condizione fondamentale non rispettata.")
+                st.session_state.finished = True
+            else:
+                st.session_state.step += 1
+                st.experimental_rerun()
+
+    elif not st.session_state.finished and st.session_state.step == len(domande):
+        # Tutte le domande completate
+        if all(ans == "Sì" for ans in st.session_state.answers):
+            st.success(coverages[categoria]["dettagli"])
+        else:
+            st.error("❌ Non coperto: una o più condizioni non sono rispettate.")
+        st.session_state.finished = True
+
+    if st.session_state.finished:
+        if st.button("🔄 Ricomincia"):
+            st.session_state.categoria = None
+            st.session_state.step = 0
+            st.session_state.answers = []
+            st.session_state.finished = False
+            st.experimental_rerun()
