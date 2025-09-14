@@ -38,8 +38,9 @@ database = [
         "sinistro": "Noleggio auto – danni o furto",
         "keywords": [
             "noleggio auto", "auto a noleggio", "macchina affittata",
-            "ho graffiato l'auto", "danni auto", "furto auto", "rubato auto",
-            "incidentato auto a noleggio", "danni alla macchina presa in vacanza"
+            "ho graffiato l'auto", "graffiato la macchina", "danni auto",
+            "furto auto", "rubato auto", "incidentato auto a noleggio",
+            "danni alla macchina presa in vacanza"
         ],
         "domande": [
             "Era un’auto a noleggio (non di tua proprietà)?",
@@ -102,32 +103,33 @@ database = [
 ]
 
 st.title("🤖 Assistente Coperture Amex Platino")
-st.write("Scrivi in linguaggio naturale cosa ti è successo e risponderò se sei coperto. Prima ti farò alcune domande per verificare le condizioni della polizza.")
+st.write("Scrivi in linguaggio naturale cosa ti è successo. Poi premi **Invia** per verificare se sei coperto. Ti farò alcune domande per controllare le condizioni della polizza.")
 
 query = st.text_area("Descrivi cosa è successo", height=100)
 
-if query:
-    match = None
-    for item in database:
-        if any(k in query.lower() for k in item["keywords"]):
-            match = item
-            break
+if st.button("Invia"):
+    if query:
+        match = None
+        for item in database:
+            if any(k in query.lower() for k in item["keywords"]):
+                match = item
+                break
 
-    if match:
-        st.subheader(f"Possibile copertura: {match['sinistro']}")
+        if match:
+            st.subheader(f"Possibile copertura: {match['sinistro']}")
 
-        answers = []
-        with st.form(key="checklist"):
-            for q in match["domande"]:
-                answers.append(st.radio(q, ["Sì", "No"], index=0))
-            submitted = st.form_submit_button("Verifica copertura")
+            answers = []
+            with st.form(key="checklist"):
+                for q in match["domande"]:
+                    answers.append(st.radio(q, ["Sì", "No"], index=0))
+                submitted = st.form_submit_button("Verifica copertura")
 
-        if submitted:
-            if all(a == "Sì" for a in answers):
-                st.success("✅ Coperto")
-                st.write(match["dettagli"])
-            else:
-                st.error("❌ Non coperto")
-                st.write("Una o più condizioni richieste dalla polizza non sono rispettate.")
-    else:
-        st.warning("Non ho trovato una copertura corrispondente. Prova a descrivere diversamente il sinistro.")
+            if submitted:
+                if all(a == "Sì" for a in answers):
+                    st.success("✅ Coperto")
+                    st.write(match["dettagli"])
+                else:
+                    st.error("❌ Non coperto")
+                    st.write("Una o più condizioni richieste dalla polizza non sono rispettate.")
+        else:
+            st.warning("Non ho trovato una copertura corrispondente. Prova a descrivere diversamente il sinistro.")
